@@ -1,126 +1,144 @@
-# 몬테카를로 가격 시뮬레이션
+# Monte Carlo Pricing Simulation
 
-불확실한 시장 환경에서 파생상품 가격을 추정하기 위한 포트폴리오형 연구 저장소입니다. 이 프로젝트는 **문제 정의 → 데이터 가정 → 모델링 방법론 → 수치 결과 → 실무 확장성** 흐름이 한눈에 보이도록 구성되어 있습니다.
+GBM 가정 하에서 파생상품 공정가치를 Monte Carlo 방식으로 추정하는 포트폴리오형 연구 저장소.
 
-## 1. 문제 정의
+**핵심 연구 질문**
 
-폐형식(Closed-form) 가격 모형은 상품 구조와 시장 가정이 단순할 때는 매우 효율적입니다. 그러나 실제 실무에서는 경로의존성, 맞춤형 페이오프, 시나리오 기반 위험분석이 빈번해 분석해만으로는 한계가 발생합니다.  
-본 저장소는 확률적 가격 동학 하에서 **몬테카를로 시뮬레이션**으로 파생상품의 공정가치를 추정하고, 단일 가격값을 넘어서는 실무적 인사이트를 도출하는 과정을 다룹니다.
+> 설정 가능한 시장 가정 아래에서 Monte Carlo 시뮬레이션은 파생상품 가격을 얼마나 안정적으로 추정할 수 있으며, 그 결과로부터 어떤 실무적 통찰을 얻을 수 있는가?
 
-핵심 연구 질문:
-
-> 설정 가능한 시장 가정 아래에서 몬테카를로 시뮬레이션은 파생상품 가격을 얼마나 안정적으로 추정할 수 있으며, 그 결과로부터 어떤 실무적 통찰을 얻을 수 있는가?
-
-## 2. 데이터
-
-이 프로젝트는 합성 데이터와 시장 연계 데이터 모두를 수용할 수 있도록 설계되었습니다.
-
-- `data/raw/`: 시장 스냅샷, 변동성 가정, 금리 등 원본 입력 데이터
-- `data/processed/`: 모델링에 즉시 사용할 수 있도록 정제·가공된 데이터
-- `data/sample/`: 재현 가능한 데모 실행을 위한 경량 샘플 데이터
-
-주요 입력 변수 예시:
-
-- 기초자산 현재 가격
-- 행사가격 및 잔존만기
-- 무위험 이자율
-- 변동성 추정치
-- 시뮬레이션 경로 수 및 시간 분할 수
-
-## 3. 방법론
-
-기본 워크플로우는 재사용 가능한 가격 산출 파이프라인으로 구성됩니다.
-
-1. 계약 조건 및 시장 가정 정의
-2. 확률과정 가정 하에서 기초자산 경로 생성
-3. 경로별 만기 페이오프 평가
-4. 기대 페이오프를 현재가치로 할인
-5. 시나리오/민감도/시뮬레이션 설정별 결과 비교
-
-예상 확장 방법론:
-
-- 기하 브라운 운동(GBM) 기반 기준 모형
-- 분산 축소 기법
-- 수렴 진단
-- 변동성·만기·행사가격 민감도 분석
-- 가능한 경우 해석해 벤치마크와 비교
-
-## 4. 결과
-
-코드와 산출물을 분리해 저장소 가독성과 포트폴리오 완성도를 높였습니다.
-
-- `outputs/charts/`: 수렴 그래프, 경로 시각화, 시나리오 비교 그래프
-- `outputs/tables/`: 가격 요약표, 민감도 테이블, 실험 로그
-- `outputs/images/`: README/보고서/발표용 이미지 자산
-
-권장 결과 해석 항목:
-
-- 추정 파생상품 가격
-- 신뢰구간 또는 시뮬레이션 안정성 지표
-- 파라미터 민감도
-- 모형 한계에 대한 해석
-
-## 5. 실무 확장
-
-이 저장소는 일회성 과제가 아니라 실무형 금융 분석으로 확장 가능한 기반을 목표로 합니다.
-
-가능한 확장 방향:
-
-- 이색옵션 가격 산출
-- 구조화 상품 페이오프 시뮬레이션
-- VaR / Expected Shortfall 시나리오 엔진
-- 맞춤형 시장 스트레스 테스트
-- 내부 도구용 가격 산출 API 또는 대시보드 연계
+---
 
 ## 저장소 구조
 
-```text
+```
 monte-carlo-pricing-simulation/
-|-- README.md
-|-- .gitignore
-|-- requirements.txt
-|-- docs/
-|-- notebooks/
-|-- src/
-|-- data/
-|-- outputs/
-|-- references/
-|-- presentation/
-`-- archive/
+├── src/
+│   ├── monte_carlo_engine.py   # GBM terminal price, European MC pricing, CI
+│   ├── black_scholes.py        # BS 해석해, Greeks, Put-Call Parity 검증
+│   ├── gbm_paths.py            # 전체 경로 배열 생성 (시각화·경로의존형 옵션용)
+│   ├── asian_option.py         # Arithmetic/Geometric Asian option MC + 해석해
+│   ├── convergence.py          # 경로 수별 수렴 분석
+│   └── config.py               # 경로 설정
+├── notebooks/
+│   ├── 01_gbm_path_simulation.ipynb       # GBM 경로 시각화, 분포 검증
+│   ├── 02_european_option_mc_vs_bs.ipynb  # MC vs BS 벤치마크, 오차 분석
+│   ├── 03_convergence_analysis.ipynb      # 수렴 속도, CI 폭, 목표 정밀도
+│   └── 04_asian_option_pricing.ipynb      # Asian option, European 비교
+├── data/
+│   └── sample/option_scenarios.csv        # 재현 가능한 데모 시나리오
+├── outputs/
+│   ├── charts/                            # 생성된 차트 (PNG)
+│   └── tables/                            # 생성된 결과 테이블 (CSV)
+├── docs/
+│   └── methodology.md                     # GBM, BS, Asian, 수렴 분석 수식 정리
+└── requirements.txt
 ```
 
-## 운영 원칙
+---
 
-- README는 프로젝트의 핵심 안내 문서 역할을 합니다.
-- 문서, 코드, 실험, 결과를 물리적으로 분리해 관리합니다.
-- 동일 구조를 다른 금융 리서치 주제로 손쉽게 재사용할 수 있습니다.
-- 모든 추가 작업은 **문제 → 데이터 → 방법론 → 결과 → 실무 확장** 흐름을 강화해야 합니다.
+## 구현 범위
 
+| 모듈 | 기능 |
+|---|---|
+| `monte_carlo_engine` | GBM 만기 가격 시뮬레이션, 유럽형 콜/풋 MC 가격, 95% CI |
+| `black_scholes` | BS 해석해(콜/풋), Delta/Gamma/Vega/Theta, Put-Call Parity 검증 |
+| `gbm_paths` | 전체 경로 배열 `(n_paths, n_steps+1)` 생성 |
+| `asian_option` | Arithmetic/Geometric Asian MC, Geometric 해석해(Kemna & Vorst) |
+| `convergence` | 경로 수 격자별 수렴 테이블, 이론 O(1/sqrt(N)) 기준선 |
 
-## 다음 개발 목표
+---
 
-- `src/`에 기준 몬테카를로 옵션 가격기 고도화
-- `notebooks/`에 재현 가능한 실험 노트북 추가
-- `outputs/`에 결과 차트/테이블 정리
-- `docs/`, `presentation/`에 포트폴리오용 해석 자료 보강
+## 빠른 시작
 
-## 한국어 연구 패키지 안내 (KAIST-DFMBA KMS 스타일 반영)
+```bash
+pip install -r requirements.txt
+```
 
-현재 저장소 구조에 맞춰 재사용 가능한 한국어 문서/실험 패키지를 포함하고 있습니다.
-
-- 핵심 가격 엔진: `src/monte_carlo_engine.py`
-- 시나리오 실행기: `src/run_pricing_experiment.py`
-- 샘플 시나리오 데이터: `data/sample/option_scenarios.csv`
-- 한국어 가이드 문서: `docs/kms_adapted_research_package_ko.md`
-- 한국어 워크플로우 노트: `references/lecture-notes/monte_carlo_workflow_note_ko.md`
-
-실행 명령:
+**시나리오 실험 실행**
 
 ```bash
 python -m src.run_pricing_experiment
+# → outputs/tables/pricing_results_sample.csv
+# → outputs/charts/pricing_results_sample.png
 ```
 
-산출물:
+**노트북 실행**
 
-- `outputs/tables/pricing_results_sample.csv`
-- `outputs/charts/pricing_results_sample.png`
+```bash
+jupyter notebook notebooks/
+```
+
+**단일 가격 산출 예시**
+
+```python
+from src import MarketAssumption, ContractSpec, SimulationSpec, price_option, bs_price
+
+market   = MarketAssumption(spot=100.0, rate=0.03, volatility=0.20)
+contract = ContractSpec(strike=100.0, maturity=1.0, option_type='call')
+sim      = SimulationSpec(n_paths=50_000, n_steps=252, seed=42)
+
+mc = price_option(market, contract, sim)
+bs = bs_price(market, contract)
+
+print(f'MC: {mc.price:.4f}  CI=[{mc.ci_low:.4f}, {mc.ci_high:.4f}]')
+print(f'BS: {bs.price:.4f}  delta={bs.delta:.4f}')
+```
+
+---
+
+## 분석 노트북 요약
+
+### 01. GBM 경로 시뮬레이션
+- 샘플 경로 50개 시각화
+- 만기 가격 분포 → 로그정규 분포 검증
+- 변동성 수준(σ = 0.10 ~ 0.50)별 경로 분산 비교
+
+### 02. 유럽형 옵션: MC vs Black-Scholes
+- 기준 시나리오에서 MC vs BS 가격 비교 (50,000 경로 기준 상대 오차 < 0.5%)
+- 변동성 격자(σ = 0.05 ~ 0.60)에서 오차 분석
+- Put-Call Parity 수치 검증
+- 행사가격별 가격 곡선 비교
+
+### 03. 수렴 분석 및 신뢰구간
+- 경로 수 100 ~ 100,000 구간에서 수렴 확인
+- CI 폭 vs 이론 O(1/sqrt(N)) 곡선 비교
+- 목표 정밀도별 필요 경로 수 역산
+- 30개 시드에서 안정성 확인
+
+### 04. Asian Option 가격 산출
+- Arithmetic vs Geometric Asian vs European 가격 비교
+- Geometric Asian MC vs Kemna & Vorst 해석해 검증
+- 변동성·만기별 Asian/European 가격 비율 분석
+- 경로별 평균 가격 vs 만기 가격 시각화
+
+---
+
+## 주요 결과 (기준 시나리오: S=100, K=100, T=1, r=3%, σ=20%)
+
+| 모델 | 가격 |
+|---|---|
+| Black-Scholes (해석해) | 9.4134 |
+| European MC (50,000 경로) | ≈ 9.41 ± 0.04 |
+| Asian Arithmetic MC | ≈ 5.34 |
+| Asian Geometric MC | ≈ 5.15 |
+| Asian Geometric BS | ≈ 5.06 |
+
+MC 표준오차는 경로 수 N에 대해 O(1/sqrt(N))으로 감소한다.
+
+---
+
+## 방법론
+
+→ [`docs/methodology.md`](docs/methodology.md) 참조
+
+GBM 이산화, BS 공식, Asian option 해석해(Kemna & Vorst), 수렴 진단 수식을 정리했다.
+
+---
+
+## 확장 방향
+
+- 분산 축소 기법 (Antithetic Variates, Control Variates)
+- Greeks 수치 근사 (Finite Difference)
+- 변동성 스마일 / 국소 변동성 모형
+- VaR / Expected Shortfall 시나리오 엔진
+- Barrier option, Lookback option 등 이색옵션 확장
